@@ -15,7 +15,7 @@ class DocumentTracker:
         self.history_path = Path(history_path)
         self.setup_logging()
         self.initialize_files()
-    
+
     def setup_logging(self):
         logging.basicConfig(
             level=logging.INFO,
@@ -31,7 +31,7 @@ class DocumentTracker:
         # 初始化待阅读列表文件
         if not self.reading_list_path.exists():
             self.save_reading_list([])
-        
+
         # 初始化历史记录文件
         if not self.history_path.exists():
             self.save_history([])
@@ -53,10 +53,10 @@ class DocumentTracker:
         """解析网页中的文章链接和标题"""
         if not html_content:
             return []
-        
+
         soup = BeautifulSoup(html_content, 'html.parser')
         articles = []
-        
+
         # 这里的选择器需要根据具体网站结构调整
         for article in soup.select('article'):  # 根据实际网站HTML结构调整选择器
             title = article.find('h2')
@@ -67,7 +67,7 @@ class DocumentTracker:
                     'url': link.get('href'),
                     'found_date': datetime.now().isoformat()
                 })
-        
+
         return articles
 
     def load_reading_list(self):
@@ -101,57 +101,74 @@ class DocumentTracker:
     def check_updates(self):
         """检查网站更新"""
         self.logger.info(f"开始检查更新: {self.url}")
-        
+
         # 获取网页内容
         html_content = self.fetch_page()
         if not html_content:
             return
-        
+
         # 解析文章
         current_articles = self.parse_articles(html_content)
         history = self.load_history()
         reading_list = self.load_reading_list()
-        
+
         # 检查新文章
         history_urls = {item['url'] for item in history}
         new_articles = [
             article for article in current_articles
             if article['url'] not in history_urls
         ]
-        
+
         if new_articles:
             self.logger.info(f"发现 {len(new_articles)} 篇新文章")
-            
+
             # 更新历史记录
             history.extend(new_articles)
             self.save_history(history)
-            
+
             # 更新待阅读列表
             reading_list.extend(new_articles)
             self.save_reading_list(reading_list)
-            
+
             # 打印新文章信息
             for article in new_articles:
                 self.logger.info(f"新文章: {article['title']} - {article['url']}")
         else:
             self.logger.info("没有发现新文章")
 
+
 def run_tracker(url, interval_minutes=60):
     """运行追踪器"""
     tracker = DocumentTracker(url)
-    
+
     # 首次运行
     tracker.check_updates()
-    
+
     # 设置定期检查
     schedule.every(interval_minutes).minutes.do(tracker.check_updates)
-    
+
     # 持续运行
     while True:
         schedule.run_pending()
         time.sleep(60)
 
+
+def load_config(config_path="config.yaml"):
+    """Load configuration from a YAML or JSON file"""
+    config_path = Path(config_path)
+    if config_path.suffix == '.yaml' or config_path.suffix == '.yml':
+        import yaml
+        with open(config_path, 'r', encoding='utf-8') as f:
+            return yaml.safe_load(f)
+    elif config_path.suffix == '.json':
+        import json
+        with open(config_path, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    else:
+        raise ValueError("Config file must be either YAML or JSON format")
+
+
 if __name__ == "__main__":
-    # 使用示例
-    website_url = "https://lilianweng.github.io/"
+    config = load_config()  # defaults to "config.yaml"
+    website_url = config['website_url']
     run_tracker(website_url, interval_minutes=60)
