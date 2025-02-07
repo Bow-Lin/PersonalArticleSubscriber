@@ -1,3 +1,8 @@
-website_url: "https://lilianweng.github.io/"
-
-interval_minutes: 60
+websites:
+  - name: "Lilian Weng's Blog"
+    url: "https://lilianweng.github.io/"
+    interval_minutes: 60
+  
+  - name: "Max's Blog"
+    url: "https://minimaxir.com/"
+    interval_minutes: 30

@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>多网站文章追踪器</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .website-section {
+            margin-bottom: 40px;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 20px;
+        }
+        .website-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+        }
+        .website-url {
+            font-size: 0.9em;
+            color: #666;
+        }
+        .update-item {
+            border: 1px solid #ddd;
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        .timestamp {
+            color: #666;
+            font-size: 0.9em;
+        }
+        .no-updates {
+            text-align: center;
+            color: #666;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>多网站文章追踪器</h1>
+    
+    {% if websites %}
+        {% for site_name, site_data in websites.items() %}
+        <div class="website-section">
+            <div class="website-header">
+                <h2>{{ site_name }}</h2>
+                <a href="{{ site_data.url }}" class="website-url" target="_blank">访问网站</a>
+            </div>
+            
+            {% if site_data.updates %}
+                {% for update in site_data.updates %}
+                <div class="update-item">
+                    <h3>{{ update.title }}</h3>
+                    <p>{{ update.content }}</p>
+                    <div class="timestamp">更新时间: {{ update.timestamp }}</div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="no-updates">
+                    <p>暂无更新</p>
+                </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="no-updates">
+            <p>所有网站暂无更新</p>
+        </div>
+    {% endif %}
+
+    <script>
+        // Auto refresh the page every 5 minutes
+        setTimeout(function() {
+            location.reload();
+        }, 5 * 60 * 1000);
+    </script>
+</body>
+</html> 

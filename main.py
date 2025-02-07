@@ -1,24 +1,47 @@
-import schedule
-import time
+from flask import Flask, render_template
 from src.tracker import DocumentTracker
 from src.utils import load_config
 
-def run_tracker(url, interval_minutes=60):
-    """运行追踪器"""
-    tracker = DocumentTracker(url)
+app = Flask(__name__)
 
-    # 首次运行
-    tracker.check_updates()
+# Global variable to store trackers
+trackers = {}
 
-    # 设置定期检查
-    schedule.every(interval_minutes).minutes.do(tracker.check_updates)
+def initialize_trackers(config):
+    """Initialize trackers for all websites"""
+    global trackers
+    for website in config['websites']:
+        trackers[website['name']] = {
+            'tracker': DocumentTracker(website['url']),
+            'url': website['url']
+        }
 
-    # 持续运行
-    while True:
-        schedule.run_pending()
-        time.sleep(60)
+@app.route('/')
+def index():
+    """Check for updates when the page is loaded and return results"""
+    updates = {}
+    
+    try:
+        # Check updates for each website
+        for site_name, site_data in trackers.items():
+            tracker = site_data['tracker']
+            new_updates = tracker.check_updates()
+            # Always add the website to updates dictionary, even if there are no new updates
+            updates[site_name] = {
+                'updates': new_updates if new_updates else [],
+                'url': site_data['url']
+            }
+    except Exception as e:
+        print(f"Error checking updates: {e}")
+        
+    # Return the template with updates (empty or not)
+    return render_template('index.html', websites=updates)
 
 if __name__ == "__main__":
     config = load_config()  # defaults to "config.yaml"
-    website_url = config['website_url']
-    run_tracker(website_url, interval_minutes=60) 
+    
+    # Initialize trackers
+    initialize_trackers(config)
+    
+    # Run Flask app
+    app.run(debug=True, port=5000) 
